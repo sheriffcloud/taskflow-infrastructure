@@ -1,0 +1,38 @@
+# # ── Secrets ───────────────────────────────────────────────────────────────────
+# .env
+# .env.local
+# .env.production
+
+# # ── Terraform ─────────────────────────────────────────────────────────────────
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# # ── Kubernetes secrets ────────────────────────────────────────────────────────
+# k8s/secrets.yaml
+
+# # ── Dependencies (never commit these) ────────────────────────────────────────
+# node_modules/
+# **/node_modules/
+
+# # ── Build outputs ─────────────────────────────────────────────────────────────
+# **/dist/
+# **/build/
+
+# # ── Logs ──────────────────────────────────────────────────────────────────────
+# *.log
+# npm-debug.log*
+
+# # ── OS files ──────────────────────────────────────────────────────────────────
+# .DS_Store
+# Thumbs.db
+
+# # ── Docker ────────────────────────────────────────────────────────────────────
+# *.dockerignore

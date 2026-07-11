@@ -1,0 +1,6 @@
+aws_region   = "us-east-1"
+environment  = "production"
+project_name = "taskflow"
+
+# Database password — use a strong password
+rds_password = "CHANGE_THIS_TO_A_STRONG_PASSWORD"
