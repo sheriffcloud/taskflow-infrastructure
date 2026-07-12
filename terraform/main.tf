@@ -84,17 +84,17 @@ module "elasticache" {
 module "eks" {
   source = "./modules/eks"
 
-  aws_region                 = var.aws_region
-  project_name               = var.project_name
-  environment                = var.environment
-  vpc_id                     = module.vpc.vpc_id
-  eks_cluster_version        = var.eks_cluster_version
-  eks_node_instance_type     = var.eks_node_instance_type
-  private_subnet_ids         = module.vpc.private_subnet_ids
+  aws_region                  = var.aws_region
+  project_name                = var.project_name
+  environment                 = var.environment
+  vpc_id                      = module.vpc.vpc_id
+  eks_cluster_version         = var.eks_cluster_version
+  eks_node_instance_type      = var.eks_node_instance_type
+  private_subnet_ids          = module.vpc.private_subnet_ids
   eks_nodes_security_group_id = module.vpc.eks_nodes_security_group_id
-  eks_node_min_size          = var.eks_node_min_size
-  eks_node_max_size          = var.eks_node_max_size
-  eks_node_desired_size      = var.eks_node_desired_size
+  eks_node_min_size           = var.eks_node_min_size
+  eks_node_max_size           = var.eks_node_max_size
+  eks_node_desired_size       = var.eks_node_desired_size
 
   depends_on = [module.vpc]
 }
