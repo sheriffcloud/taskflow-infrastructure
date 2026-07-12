@@ -1,4 +1,3 @@
-
 # ── VPC Outputs ─────────────────────────────────────────────────────────────
 output "vpc_id" {
   description = "The ID of the VPC created by the module"
