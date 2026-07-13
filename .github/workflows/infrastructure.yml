@@ -117,9 +117,12 @@ jobs:
       - name: Delete Kubernetes resources
         if: github.event.inputs.action == 'destroy'
         run: |
+          echo "Deleting Kubernetes resources..."
           kubectl delete -f k8s/ingress.yaml --ignore-not-found=true
           echo "Waiting 60s for ALB deletion..."
           sleep 60
+          kubectl delete secret taskflow-secrets \
+            -n taskflow --ignore-not-found=true
           kubectl delete namespace taskflow --ignore-not-found=true
           echo "Kubernetes resources deleted ✅"
         continue-on-error: true
