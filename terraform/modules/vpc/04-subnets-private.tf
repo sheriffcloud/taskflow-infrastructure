@@ -9,6 +9,6 @@ resource "aws_subnet" "private" {
     Name = "${var.project_name}-${var.environment}-private-subnet-${count.index + 1}"
     Environment = var.environment
     "kubernetes.io/role/internal-elb" = "1"
-    "kubernetes.io/cluster/${var.project_name}-${var.environment}-eks" = "shared"
+    "kubernetes.io/cluster/${var.project_name}-${var.environment}-eks-cluster" = "shared"
   }
 }
