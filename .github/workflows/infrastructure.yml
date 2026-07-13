@@ -3,12 +3,7 @@ name: Infrastructure Pipeline
 on:
   push:
     branches: [main]
-    # Runs terraform plan automatically on every push
-    # Shows what WOULD change without applying
-
   workflow_dispatch:
-    # Manual trigger from GitHub Actions UI
-    # Allows you to choose what action to run
     inputs:
       action:
         description: "Terraform action to run"
@@ -19,12 +14,11 @@ on:
           - plan
           - apply
           - destroy
+          - install-lbc
 
 env:
   TF_VERSION: "1.5.0"
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  # TF_VAR_ prefix tells Terraform to use this as a variable
-  # Replaces terraform.tfvars in the pipeline
   TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
 
 jobs:
@@ -35,19 +29,16 @@ jobs:
     defaults:
       run:
         working-directory: terraform
-        # All run steps execute from terraform/ folder
-        # No need to cd terraform in every step
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Terraform
+        if: github.event.inputs.action != 'install-lbc'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
-        # Downloads and installs Terraform on the runner
-        # Same as having terraform installed on your laptop
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -57,47 +48,70 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Terraform Init
-        run: terraform init
-        # Downloads providers and connects to S3 backend
-        # Same as running terraform init on your laptop
+        if: github.event.inputs.action != 'install-lbc'
+        run: terraform init -input=false
 
       - name: Terraform Format Check
+        if: github.event.inputs.action != 'install-lbc'
         run: terraform fmt -check -recursive
-        # Verifies all .tf files are properly formatted
-        # Fails if any file needs formatting
-        # Enforces consistent code style across the team
         continue-on-error: true
-        # continue-on-error: true means pipeline continues
-        # even if formatting check fails
-        # We don't want to block deployments over formatting
 
       - name: Terraform Validate
+        if: github.event.inputs.action != 'install-lbc'
         run: terraform validate
-        # Checks that the configuration is syntactically valid
-        # Catches errors before hitting the AWS API
-        # Fast check — no AWS calls needed
 
       - name: Terraform Plan
+        if: |
+          github.event.inputs.action == 'plan' ||
+          github.event.inputs.action == '' ||
+          github.event_name == 'push'
         run: terraform plan -input=false -lock-timeout=60s -out=tfplan
-        # Creates an execution plan
-        # Shows exactly what will be created/changed/destroyed
-        # Saves plan to file "tfplan" for apply step to use
-        # -out ensures apply uses EXACTLY this plan
-        # prevents drift between plan and apply
 
       - name: Show Plan Summary
+        if: |
+          github.event.inputs.action == 'plan' ||
+          github.event.inputs.action == '' ||
+          github.event_name == 'push'
         run: terraform show -no-color tfplan
-        # Prints the plan in human readable format
-        # Visible in GitHub Actions UI
-        # Team can review what will change
 
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
-        run: terraform apply -auto-approve tfplan
-        # Only runs when manually triggered with action=apply
-        # -auto-approve skips the yes/no prompt
-        # Uses the saved plan from previous step
-        # Ensures what gets applied matches what was reviewed
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Save Terraform Outputs
+        if: github.event.inputs.action == 'apply'
+        run: |
+          terraform output -json > terraform-outputs.json
+          echo "Infrastructure outputs:"
+          cat terraform-outputs.json
+
+      - name: Configure kubectl
+        if: |
+          github.event.inputs.action == 'apply' ||
+          github.event.inputs.action == 'install-lbc' ||
+          github.event.inputs.action == 'destroy'
+        working-directory: .
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ secrets.AWS_REGION }} \
+            --name taskflow-production-eks-cluster
+
+      - name: Install AWS Load Balancer Controller
+        if: |
+          github.event.inputs.action == 'apply' ||
+          github.event.inputs.action == 'install-lbc'
+        working-directory: .
+        run: |
+          LBC_ROLE_ARN=$(cd terraform && terraform output -raw lbc_role_arn)
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm repo add eks https://aws.github.io/eks-charts
+          helm repo update
+          helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+            -n kube-system \
+            --set clusterName=taskflow-production-eks-cluster \
+            --set serviceAccount.create=true \
+            --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=$LBC_ROLE_ARN
+          echo "LBC installed ✅"
 
       - name: Checkout taskflow-k8s
         if: github.event.inputs.action == 'destroy'
@@ -107,15 +121,9 @@ jobs:
           token: ${{ secrets.K8S_REPO_TOKEN }}
           path: k8s
 
-      - name: Configure kubectl
-        if: github.event.inputs.action == 'destroy'
-        run: |
-          aws eks update-kubeconfig \
-            --region ${{ secrets.AWS_REGION }} \
-            --name taskflow-production-eks-cluster
-
       - name: Delete Kubernetes resources
         if: github.event.inputs.action == 'destroy'
+        working-directory: .
         run: |
           echo "Deleting Kubernetes resources..."
           kubectl delete -f k8s/ingress.yaml --ignore-not-found=true
@@ -130,17 +138,3 @@ jobs:
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         run: terraform destroy -input=false -auto-approve
-        working-directory: terraform
-        # Only runs when manually triggered with action=destroy
-        # Destroys ALL infrastructure
-        # Use with extreme caution in production
-
-      - name: Save Terraform Outputs
-        if: github.event.inputs.action == 'apply'
-        run: |
-          terraform output -json > terraform-outputs.json
-          echo "Infrastructure outputs:"
-          cat terraform-outputs.json
-        # Saves all terraform outputs to a JSON file
-        # Shows them in the pipeline logs
-        # Useful for debugging and verification

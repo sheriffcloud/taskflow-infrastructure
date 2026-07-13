@@ -47,6 +47,11 @@ output "configure_kubectl" {
   value       = module.eks.configure_kubectl
 }
 
+output "lbc_role_arn" {
+  description = "LBC IAM role ARN"
+  value       = module.eks.lbc_role_arn
+}
+
 
 # ── RDS Outputs ─────────────────────────────────────────────────────────────
 output "rds_endpoint" {
