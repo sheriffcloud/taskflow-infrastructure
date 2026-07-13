@@ -11,6 +11,14 @@ terraform {
       # Downloads content from HTTP URLs
       # Used to fetch the LBC IAM policy
     }
+
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+      # Reads TLS certificates
+      # Used to get EKS OIDC certificate thumbprint
+      # Required for aws_iam_openid_connect_provider
+    }
   }
 }
 
