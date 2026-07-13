@@ -115,6 +115,7 @@ variable "db_port" {
   default     = 5432
 }
 
+
 variable "allocated_storage" {
   description = "Initial storage allocated in GB"
   type        = number
