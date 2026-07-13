@@ -22,7 +22,9 @@ resource "aws_iam_openid_connect_provider" "eks" {
 
 # ── LBC IAM Policy ────────────────────────────────────────────────────────────
 data "http" "lbc_policy" {
-  url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.1/docs/install/iam_policy.json"
+  url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v3.4.1/docs/install/iam_policy.json"
+  # Updated to match LBC v3.4.1 installed via Helm
+  # v2.7.1 policy missing DescribeListenerAttributes permission
   # Downloads the official LBC IAM policy from GitHub
   # No manual file download needed
   # Always gets the correct policy for v2.7.1
