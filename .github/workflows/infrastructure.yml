@@ -78,7 +78,7 @@ jobs:
         # Fast check — no AWS calls needed
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -input=false -lock-timeout=60s -out=tfplan
         # Creates an execution plan
         # Shows exactly what will be created/changed/destroyed
         # Saves plan to file "tfplan" for apply step to use
