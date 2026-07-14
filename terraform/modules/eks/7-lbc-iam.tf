@@ -17,6 +17,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-eks-oidc"
+    Environment = var.environment
   }
 }
 
