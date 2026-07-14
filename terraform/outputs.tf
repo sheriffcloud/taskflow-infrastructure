@@ -140,7 +140,7 @@ output "alb_security_group_id" {
 
 output "route53_nameservers" {
   description = "Nameservers to configure on Namecheap"
-  value       = module.dns.nameservers
+  value       = module.dns.route53_nameservers
 }
 
 output "certificate_arn" {
