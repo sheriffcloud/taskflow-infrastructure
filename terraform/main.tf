@@ -98,3 +98,14 @@ module "eks" {
 
   depends_on = [module.vpc]
 }
+
+
+module "dns" {
+  source = "./modules/dns"
+
+  project_name    = var.project_name
+  environment     = var.environment
+  domain_name     = var.domain_name
+  alb_dns_name    = var.alb_dns_name
+ 
+}

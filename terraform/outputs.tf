@@ -134,3 +134,21 @@ output "alb_security_group_id" {
   description = "The ID of the ALB security group created by the module"
   value       = module.vpc.alb_security_group_id
 }
+
+
+# ── DNS Outputs ─────────────────────────────────────────────────────
+
+output "route53_nameservers" {
+  description = "Nameservers to configure on Namecheap"
+  value       = module.dns.nameservers
+}
+
+output "certificate_arn" {
+  description = "ACM certificate ARN for HTTPS"
+  value       = module.dns.certificate_arn
+}
+
+output "zone_id" {
+  description = "Route 53 hosted zone ID"
+  value       = module.dns.zone_id
+}
