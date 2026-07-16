@@ -107,5 +107,6 @@ module "dns" {
   environment     = var.environment
   domain_name     = var.domain_name
   alb_dns_name    = var.alb_dns_name
+  alb_hosted_zone_id = var.alb_hosted_zone_id
  
 }
