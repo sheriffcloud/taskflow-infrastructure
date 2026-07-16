@@ -178,7 +178,12 @@ jobs:
             --sync-policy automated \
             --self-heal \
             --auto-prune \
+            --directory-recurse \
             --upsert
+          # --directory-recurse tells ArgoCD to scan
+          # ALL subfolders for yaml files
+          # Without this only root level files are synced
+          # api-gateway/, user-service/ etc. are ignored
 
           echo "ArgoCD application created ✅"
 
