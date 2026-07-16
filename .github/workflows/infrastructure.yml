@@ -188,10 +188,21 @@ jobs:
           github.event.inputs.action == 'install-lbc'
         working-directory: .
         run: |
-          RDS_HOST=$(cd terraform && terraform output -raw rds_host)
-          REDIS_ENDPOINT=$(cd terraform && terraform output -raw redis_endpoint)
+          RDS_HOST=$(aws rds describe-db-instances \
+            --region ${{ secrets.AWS_REGION }} \
+            --query "DBInstances[?DBInstanceIdentifier=='taskflow-production-db-postgres'].Endpoint.Address" \
+            --output text)
 
-          DATABASE_URL="postgres://taskflow_admin:${{ secrets.DB_PASSWORD }}@${RDS_HOST}:5432/taskflow?sslmode=no-verify"
+          REDIS_ENDPOINT=$(aws elasticache describe-cache-clusters \
+            --region ${{ secrets.AWS_REGION }} \
+            --show-cache-node-info \
+            --query "CacheClusters[?CacheClusterId=='taskflow-production-elasticache-cluster'].CacheNodes[0].Endpoint.Address" \
+            --output text)
+
+          echo "RDS Host: $RDS_HOST"
+          echo "Redis Endpoint: $REDIS_ENDPOINT"
+
+          DATABASE_URL="postgres://taskflow_admin:${{ secrets.TF_VAR_DB_PASSWORD }}@${RDS_HOST}:5432/taskflow?sslmode=no-verify"
           REDIS_URL="redis://${REDIS_ENDPOINT}:6379"
 
           kubectl create namespace taskflow 2>/dev/null || true
@@ -199,7 +210,7 @@ jobs:
           kubectl create secret generic taskflow-secrets \
             -n taskflow \
             --from-literal=JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            --from-literal=DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            --from-literal=DB_PASSWORD=${{ secrets.TF_VAR_DB_PASSWORD }} \
             --from-literal=DATABASE_URL=$DATABASE_URL \
             --from-literal=REDIS_URL=$REDIS_URL \
             --dry-run=client -o yaml | kubectl apply -f -
@@ -252,7 +263,11 @@ jobs:
             exit 0
           fi
 
+          # Setup Terraform for Route53 update
           cd terraform
+          wget -q https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
+          unzip -q terraform_1.5.0_linux_amd64.zip
+          sudo mv terraform /usr/local/bin/
           terraform init -input=false
           terraform apply -input=false -auto-approve \
             -var="alb_dns_name=$ALB_DNS"
