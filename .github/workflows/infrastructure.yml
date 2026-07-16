@@ -136,6 +136,7 @@ jobs:
         run: |
           kubectl create namespace argocd 2>/dev/null || true
           kubectl apply -n argocd \
+            --server-side \
             -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
           echo "Waiting for ArgoCD to be ready..."
